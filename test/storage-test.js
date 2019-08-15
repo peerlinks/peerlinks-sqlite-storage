@@ -29,9 +29,7 @@ describe('vowlink-sqlite-storage', () => {
       hash: Buffer.from(hash),
       height,
       parents: parents.map((hash) => Buffer.from(hash)),
-      serializeData() {
-        return Buffer.from(`${height}: ${hash}`);
-      }
+      data: Buffer.from(`${height}: ${hash}`),
     };
   };
 
@@ -52,9 +50,7 @@ describe('vowlink-sqlite-storage', () => {
       hash: randomBytes(32),
       height: 0,
       parents: [],
-      serializeData() {
-        return Buffer.from('fake');
-      }
+      data: Buffer.from('fake'),
     };
 
     assert.strictEqual(await storage.getMessageCount(channelId), 0);
@@ -183,17 +179,13 @@ describe('vowlink-sqlite-storage', () => {
         this.text = text;
       }
 
-      serializeData() {
-        return Buffer.from(this.text);
-      }
-
       static deserializeData(data) {
         return new Fake(data.toString());
       }
     }
 
-    assert.ok(!await storage.retrieveEntity('fake', 'id', Fake));
-    await storage.storeEntity('fake', 'id', new Fake('hello'));
+    assert.ok(!await storage.retrieveEntity('fake', 'id'));
+    await storage.storeEntity('fake', 'id', Buffer.from('hello'));
 
     assert.deepStrictEqual(await storage.getEntityKeys('fake'), [ 'id' ]);
 
