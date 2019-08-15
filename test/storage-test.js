@@ -16,10 +16,11 @@ describe('vowlink-sqlite-storage', () => {
   });
 
   afterEach(async () => {
-    await storage.close();
-
-    channelId = null;
+    const s = storage;
     storage = null;
+    channelId = null;
+
+    await s.close();
   });
 
   const msg = (hash, height, parents = []) => {
