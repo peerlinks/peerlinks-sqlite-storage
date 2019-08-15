@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto';
 
 import Storage from '../';
 
-describe('vowlink-sqlite-storage', () => {
+describe('Storage', () => {
   let channelId = null;
   let storage = null;
 
@@ -34,13 +34,14 @@ describe('vowlink-sqlite-storage', () => {
   };
 
   const at = async (offset, limit) => {
-    const blobs = await storage.getMessagesAtOffset(channelId, offset,
+    const hashes = await storage.getHashesAtOffset(channelId, offset,
       limit);
+    const blobs = await storage.getMessages(channelId, hashes);
     return blobs.map((blob) => blob.toString());
   };
 
   const leaves = async () => {
-    const result = await storage.getLeaves(channelId);
+    const result = await storage.getLeafHashes(channelId);
     return result.map((message) => message.toString()).sort();
   };
 
@@ -54,15 +55,15 @@ describe('vowlink-sqlite-storage', () => {
     };
 
     assert.strictEqual(await storage.getMessageCount(channelId), 0);
-    assert.strictEqual((await storage.getLeaves(channelId)).length, 0);
+    assert.strictEqual((await storage.getLeafHashes(channelId)).length, 0);
     assert.ok(!await storage.hasMessage(channelId, fake.hash));
 
     await storage.addMessage(fake);
     assert.strictEqual(await storage.getMessageCount(channelId), 1);
 
-    const leaves = await storage.getLeaves(channelId);
+    const leaves = await storage.getLeafHashes(channelId);
     assert.strictEqual(leaves.length, 1);
-    assert.strictEqual(leaves[0].toString(), 'fake');
+    assert.strictEqual(leaves[0].toString('hex'), fake.hash.toString('hex'));
 
     assert.ok(await storage.hasMessage(channelId, fake.hash));
     const getFake = await storage.getMessage(channelId, fake.hash);
@@ -94,9 +95,9 @@ describe('vowlink-sqlite-storage', () => {
 
     {
       const result = await storage.query(channelId, { height: 1 }, false, 2);
-      assert.strictEqual(result.messages.length, 2);
-      assert.strictEqual(result.messages[0].toString(), '1: b');
-      assert.strictEqual(result.messages[1].toString(), '1: c');
+      assert.strictEqual(result.abbreviatedMessages.length, 2);
+      assert.strictEqual(result.abbreviatedMessages[0].hash.toString(), 'b');
+      assert.strictEqual(result.abbreviatedMessages[1].hash.toString(), 'c');
       assert.strictEqual(result.backwardHash.toString(), 'b');
       assert.strictEqual(result.forwardHash.toString(), 'd');
     }
@@ -114,9 +115,9 @@ describe('vowlink-sqlite-storage', () => {
         { hash: Buffer.from('b') },
         false,
         2);
-      assert.strictEqual(result.messages.length, 2);
-      assert.strictEqual(result.messages[0].toString(), '1: b');
-      assert.strictEqual(result.messages[1].toString(), '1: c');
+      assert.strictEqual(result.abbreviatedMessages.length, 2);
+      assert.strictEqual(result.abbreviatedMessages[0].hash.toString(), 'b');
+      assert.strictEqual(result.abbreviatedMessages[1].hash.toString(), 'c');
       assert.strictEqual(result.backwardHash.toString(), 'b');
       assert.strictEqual(result.forwardHash.toString(), 'd');
     }
@@ -127,8 +128,8 @@ describe('vowlink-sqlite-storage', () => {
         { hash: Buffer.from('b') },
         true,
         2);
-      assert.strictEqual(result.messages.length, 1);
-      assert.strictEqual(result.messages[0].toString(), '0: a');
+      assert.strictEqual(result.abbreviatedMessages.length, 1);
+      assert.strictEqual(result.abbreviatedMessages[0].hash.toString(), 'a');
       assert.strictEqual(result.backwardHash, null);
       assert.strictEqual(result.forwardHash.toString(), 'b');
     }
@@ -139,8 +140,8 @@ describe('vowlink-sqlite-storage', () => {
         { hash: Buffer.from('d') },
         false,
         2);
-      assert.strictEqual(result.messages.length, 1);
-      assert.strictEqual(result.messages[0].toString(), '2: d');
+      assert.strictEqual(result.abbreviatedMessages.length, 1);
+      assert.strictEqual(result.abbreviatedMessages[0].hash.toString(), 'd');
       assert.strictEqual(result.backwardHash.toString(), 'd');
       assert.strictEqual(result.forwardHash, null);
     }
@@ -151,7 +152,7 @@ describe('vowlink-sqlite-storage', () => {
         { hash: Buffer.from('x') },
         false,
         2);
-      assert.strictEqual(result.messages.length, 0);
+      assert.strictEqual(result.abbreviatedMessages.length, 0);
       assert.strictEqual(result.backwardHash, null);
       assert.strictEqual(result.forwardHash, null);
     }
@@ -161,16 +162,16 @@ describe('vowlink-sqlite-storage', () => {
     assert.deepStrictEqual(await leaves(), []);
 
     await storage.addMessage(msg('a', 0, []));
-    assert.deepStrictEqual(await leaves(), [ '0: a' ]);
+    assert.deepStrictEqual(await leaves(), [ 'a' ]);
 
     await storage.addMessage(msg('c', 1, [ 'a' ]));
-    assert.deepStrictEqual(await leaves(), [ '1: c' ]);
+    assert.deepStrictEqual(await leaves(), [ 'c' ]);
 
     await storage.addMessage(msg('b', 1, [ 'a' ]));
-    assert.deepStrictEqual(await leaves(), [ '1: b', '1: c' ]);
+    assert.deepStrictEqual(await leaves(), [ 'b', 'c' ]);
 
     await storage.addMessage(msg('d', 2, [ 'b', 'c' ]));
-    assert.deepStrictEqual(await leaves(), [ '2: d' ]);
+    assert.deepStrictEqual(await leaves(), [ 'd' ]);
   });
 
   it('should store and retrieve entities', async () => {
