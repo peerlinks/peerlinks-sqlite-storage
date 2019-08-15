@@ -6,91 +6,194 @@ import { randomBytes } from 'crypto';
 import Storage from '../';
 
 describe('NodeStorage', () => {
-  let channelId;
+  let channelId = null;
+  let storage = null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     channelId = randomBytes(32);
+    storage = new Storage();
+    await storage.open();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await storage.close();
+
     channelId = null;
+    storage = null;
   });
 
-  const genHash = () => {
-    return randomBytes(32);
-  };
-
-  const msg = (height, hash, parents, content = 'empty') => {
+  const msg = (hash, height, parents = []) => {
     return {
       channelId,
-      hash,
+      hash: Buffer.from(hash),
       height,
-      parents,
+      parents: parents.map((hash) => Buffer.from(hash)),
       serializeData() {
-        return Buffer.from(`${height}: ${content}`);
-      },
+        return Buffer.from(`${height}: ${hash}`);
+      }
     };
   };
 
-  it('should persist messages', async () => {
-    const s = new Storage();
+  const at = async (offset) => {
+    const blob = await storage.getMessageAtOffset(channelId, offset);
+    return blob.toString();
+  };
 
-    await s.open();
+  const leaves = async () => {
+    const result = await storage.getLeaves(channelId);
+    return result.map((message) => message.toString()).sort();
+  };
 
-    assert.strictEqual(await s.getMessageCount(channelId), 0);
-    let leaves = await s.getLeaves(channelId);
-    assert.deepStrictEqual(leaves, []);
+  it('should store and retrieve messages', async () => {
+    const fake = {
+      channelId,
+      hash: randomBytes(32),
+      height: 0,
+      parents: [],
+      serializeData() {
+        return Buffer.from('fake');
+      }
+    };
 
-    // Insert root
-    const rootHash = genHash();
-    assert.ok(!(await s.hasMessage(channelId, rootHash)));
+    assert.strictEqual(await storage.getMessageCount(channelId), 0);
+    assert.strictEqual((await storage.getLeaves(channelId)).length, 0);
+    assert.ok(!await storage.hasMessage(channelId, fake.hash));
 
-    await s.addMessage(msg(0, rootHash, [], 'root'));
-    assert.strictEqual(await s.getMessageCount(channelId), 1);
+    await storage.addMessage(fake);
+    assert.strictEqual(await storage.getMessageCount(channelId), 1);
 
-    leaves = await s.getLeaves(channelId);
+    const leaves = await storage.getLeaves(channelId);
     assert.strictEqual(leaves.length, 1);
-    assert.strictEqual(leaves[0].toString('hex'), rootHash.toString('hex'));
+    assert.strictEqual(leaves[0].toString(), 'fake');
 
-    // Insert child
-    const childHash = genHash();
-    assert.ok(!(await s.hasMessage(channelId, childHash)));
+    assert.ok(await storage.hasMessage(channelId, fake.hash));
+    const getFake = await storage.getMessage(channelId, fake.hash);
+    assert.strictEqual(getFake.toString(), 'fake');
+  });
 
-    await s.addMessage(msg(1, childHash, [ rootHash ], 'child'));
-    assert.strictEqual(await s.getMessageCount(channelId), 2);
+  it('should order messages in CRDT order', async () => {
+    await storage.addMessage(msg('a', 0));
+    await storage.addMessage(msg('c', 1));
+    await storage.addMessage(msg('b', 1));
+    await storage.addMessage(msg('d', 2));
 
-    leaves = await s.getLeaves(channelId);
-    assert.strictEqual(leaves.length, 1);
-    assert.strictEqual(leaves[0].toString('hex'), childHash.toString('hex'));
+    assert.strictEqual(await at(0), '0: a');
+    assert.strictEqual(await at(1), '1: b');
+    assert.strictEqual(await at(2), '1: c');
+    assert.strictEqual(await at(3), '2: d');
+  });
 
-    // Load both messages
-    assert.ok(await s.hasMessage(channelId, rootHash));
-    const root = await s.getMessage(channelId, rootHash);
-    assert.strictEqual(root.toString(), '0: root');
+  it('should query messages by height', async () => {
+    await storage.addMessage(msg('a', 0));
+    await storage.addMessage(msg('c', 1));
+    await storage.addMessage(msg('b', 1));
+    await storage.addMessage(msg('d', 2));
 
-    assert.ok(await s.hasMessage(channelId, childHash));
-    const child = await s.getMessage(channelId, childHash);
-    assert.strictEqual(child.toString(), '1: child');
+    {
+      const result = await storage.query(channelId, { height: 1 }, false, 2);
+      assert.strictEqual(result.messages.length, 2);
+      assert.strictEqual(result.messages[0].toString(), '1: b');
+      assert.strictEqual(result.messages[1].toString(), '1: c');
+      assert.strictEqual(result.backwardHash.toString(), 'b');
+      assert.strictEqual(result.forwardHash.toString(), 'd');
+    }
+  });
 
-    // Load all messages
-    const all = await s.getMessages(channelId, [ rootHash, childHash ]);
-    all.sort((a, b) => Buffer.compare(a, b));
-    assert.strictEqual(all.length, 2);
-    assert.strictEqual(all[0].toString(), '0: root');
-    assert.strictEqual(all[1].toString(), '1: child');
+  it('should query messages by hash', async () => {
+    await storage.addMessage(msg('a', 0));
+    await storage.addMessage(msg('c', 1));
+    await storage.addMessage(msg('b', 1));
+    await storage.addMessage(msg('d', 2));
 
-    // Check offsets
-    assert.strictEqual((await s.getMessageAtOffset(channelId, 0)).toString(),
-      '0: root');
-    assert.strictEqual((await s.getMessageAtOffset(channelId, 1)).toString(),
-      '1: child');
-    assert.strictEqual(await s.getMessageAtOffset(channelId, 2), undefined);
+    {
+      const result = await storage.query(
+        channelId,
+        { hash: Buffer.from('b') },
+        false,
+        2);
+      assert.strictEqual(result.messages.length, 2);
+      assert.strictEqual(result.messages[0].toString(), '1: b');
+      assert.strictEqual(result.messages[1].toString(), '1: c');
+      assert.strictEqual(result.backwardHash.toString(), 'b');
+      assert.strictEqual(result.forwardHash.toString(), 'd');
+    }
 
-    // Clear database
-    await s.clear();
-    assert.strictEqual(await s.getMessageCount(channelId), 0);
-    assert.deepStrictEqual(await s.getLeaves(channelId), []);
+    {
+      const result = await storage.query(
+        channelId,
+        { hash: Buffer.from('b') },
+        true,
+        2);
+      assert.strictEqual(result.messages.length, 1);
+      assert.strictEqual(result.messages[0].toString(), '0: a');
+      assert.strictEqual(result.backwardHash, null);
+      assert.strictEqual(result.forwardHash.toString(), 'b');
+    }
 
-    await s.close();
+    {
+      const result = await storage.query(
+        channelId,
+        { hash: Buffer.from('d') },
+        false,
+        2);
+      assert.strictEqual(result.messages.length, 1);
+      assert.strictEqual(result.messages[0].toString(), '2: d');
+      assert.strictEqual(result.backwardHash.toString(), 'd');
+      assert.strictEqual(result.forwardHash, null);
+    }
+
+    {
+      const result = await storage.query(
+        channelId,
+        { hash: Buffer.from('x') },
+        false,
+        2);
+      assert.strictEqual(result.messages.length, 0);
+      assert.strictEqual(result.backwardHash, null);
+      assert.strictEqual(result.forwardHash, null);
+    }
+  });
+
+  it('should compute leaves through parent hashes', async () => {
+    assert.deepStrictEqual(await leaves(), []);
+
+    await storage.addMessage(msg('a', 0, []));
+    assert.deepStrictEqual(await leaves(), [ '0: a' ]);
+
+    await storage.addMessage(msg('c', 1, [ 'a' ]));
+    assert.deepStrictEqual(await leaves(), [ '1: c' ]);
+
+    await storage.addMessage(msg('b', 1, [ 'a' ]));
+    assert.deepStrictEqual(await leaves(), [ '1: b', '1: c' ]);
+
+    await storage.addMessage(msg('d', 2, [ 'b', 'c' ]));
+    assert.deepStrictEqual(await leaves(), [ '2: d' ]);
+  });
+
+  it('should store and retrieve entities', async () => {
+    class Fake {
+      constructor(text) {
+        this.text = text;
+      }
+
+      serializeData() {
+        return Buffer.from(this.text);
+      }
+
+      static deserializeData(data) {
+        return new Fake(data.toString());
+      }
+    }
+
+    assert.ok(!await storage.retrieveEntity('fake', 'id', Fake));
+    await storage.storeEntity('fake', 'id', new Fake('hello'));
+
+    assert.deepStrictEqual(await storage.getEntityKeys('fake'), [ 'id' ]);
+
+    const retrieve = await storage.retrieveEntity('fake', 'id', Fake);
+    assert.strictEqual(retrieve.text, 'hello');
+
+    const missing = await storage.retrieveEntity('fake', randomBytes(32), Fake);
+    assert.ok(!missing);
   });
 });
