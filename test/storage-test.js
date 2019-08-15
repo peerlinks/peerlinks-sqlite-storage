@@ -32,7 +32,7 @@ describe('NodeStorage', () => {
     };
   };
 
-  it('should persist entities', async () => {
+  it('should persist messages', async () => {
     const s = new Storage();
 
     await s.open();
@@ -71,6 +71,25 @@ describe('NodeStorage', () => {
     assert.ok(await s.hasMessage(channelId, childHash));
     const child = await s.getMessage(channelId, childHash);
     assert.strictEqual(child.toString(), '1: child');
+
+    // Load all messages
+    const all = await s.getMessages(channelId, [ rootHash, childHash ]);
+    all.sort((a, b) => Buffer.compare(a, b));
+    assert.strictEqual(all.length, 2);
+    assert.strictEqual(all[0].toString(), '0: root');
+    assert.strictEqual(all[1].toString(), '1: child');
+
+    // Check offsets
+    assert.strictEqual((await s.getMessageAtOffset(channelId, 0)).toString(),
+      '0: root');
+    assert.strictEqual((await s.getMessageAtOffset(channelId, 1)).toString(),
+      '1: child');
+    assert.strictEqual(await s.getMessageAtOffset(channelId, 2), undefined);
+
+    // Clear database
+    await s.clear();
+    assert.strictEqual(await s.getMessageCount(channelId), 0);
+    assert.deepStrictEqual(await s.getLeaves(channelId), []);
 
     await s.close();
   });
