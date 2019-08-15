@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto';
 
 import Storage from '../';
 
-describe('NodeStorage', () => {
+describe('vowlink-sqlite-storage', () => {
   let channelId = null;
   let storage = null;
 

@@ -1,7 +1,7 @@
 {
-  "name": "vowlink-node-storage",
+  "name": "vowlink-sqlite-storage",
   "version": "1.0.0",
-  "description": "Node.js implementation of on-disk storage for VowLink protocol",
+  "description": "sqlite storage for VowLink protocol",
   "main": "lib/storage.js",
   "scripts": {
     "lint": "eslint lib/**/*.js test/**/*.js",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/vowlink/vowlink-node-storage.git"
+    "url": "git+ssh://git@github.com/vowlink/vowlink-sqlite-storage.git"
   },
   "keywords": [
     "vowlink",
@@ -21,9 +21,9 @@
   "author": "Fedor Indutny <fedor@indutny.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/vowlink/vowlink-node-storage/issues"
+    "url": "https://github.com/vowlink/vowlink-sqlite-storage/issues"
   },
-  "homepage": "https://github.com/vowlink/vowlink-node-storage#readme",
+  "homepage": "https://github.com/vowlink/vowlink-sqlite-storage#readme",
   "dependencies": {
     "esm": "^3.2.25",
     "sqlite3": "^4.0.9"
