@@ -1,0 +1,35 @@
+{
+  "name": "vowlink-node-storage",
+  "version": "1.0.0",
+  "description": "Node.js implementation of on-disk storage for VowLink protocol",
+  "main": "lib/storage.js",
+  "scripts": {
+    "lint": "eslint lib/**/*.js test/**/*.js",
+    "mocha": "mocha -r esm --reporter=spec test/*-test.js",
+    "test": "npm run mocha && npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/vowlink/vowlink-node-storage.git"
+  },
+  "keywords": [
+    "vowlink",
+    "persistence",
+    "storage",
+    "on-disk"
+  ],
+  "author": "Fedor Indutny <fedor@indutny.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vowlink/vowlink-node-storage/issues"
+  },
+  "homepage": "https://github.com/vowlink/vowlink-node-storage#readme",
+  "dependencies": {
+    "esm": "^3.2.25",
+    "sqlite3": "^4.0.9"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "mocha": "^6.2.0"
+  }
+}
