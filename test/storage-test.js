@@ -70,6 +70,9 @@ describe('vowlink-sqlite-storage', () => {
     assert.ok(await storage.hasMessage(channelId, fake.hash));
     const getFake = await storage.getMessage(channelId, fake.hash);
     assert.strictEqual(getFake.toString(), 'fake');
+
+    // NOTE: should not fail, even though fake is already in database
+    await storage.addMessage(fake);
   });
 
   it('should order messages in CRDT order', async () => {
