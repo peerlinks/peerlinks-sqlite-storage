@@ -25,11 +25,11 @@
   },
   "homepage": "https://github.com/vowlink/vowlink-sqlite-storage#readme",
   "dependencies": {
-    "esm": "^3.2.25",
     "sqlite3": "^4.0.9"
   },
   "devDependencies": {
     "eslint": "^6.1.0",
+    "esm": "^3.2.25",
     "mocha": "^6.2.0"
   }
 }
