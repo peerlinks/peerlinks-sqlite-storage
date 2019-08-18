@@ -209,4 +209,37 @@ describe('Storage', () => {
     const hashes2 = await storage.getReverseHashesAtOffset(channelId, 2, 2);
     assert.deepStrictEqual(hashes2.map((h) => h.toString()), [ 'b', 'a' ]);
   });
+
+  it('should preserve order of hashes in getMessages', async () => {
+    await storage.addMessage(msg('a', 0));
+    await storage.addMessage(msg('c', 1));
+    await storage.addMessage(msg('b', 1));
+    await storage.addMessage(msg('d', 2));
+
+    const messages = await storage.getMessages(channelId, [
+      Buffer.from('a'),
+      Buffer.from('b'),
+      Buffer.from('c'),
+      Buffer.from('d'),
+    ]);
+    assert.deepStrictEqual(messages.map((m) => m.toString()), [
+      '0: a',
+      '1: b',
+      '1: c',
+      '2: d',
+    ]);
+
+    const messages2 = await storage.getMessages(channelId, [
+      Buffer.from('d'),
+      Buffer.from('b'),
+      Buffer.from('a'),
+      Buffer.from('c'),
+    ]);
+    assert.deepStrictEqual(messages2.map((m) => m.toString()), [
+      '2: d',
+      '1: b',
+      '0: a',
+      '1: c',
+    ]);
+  });
 });
