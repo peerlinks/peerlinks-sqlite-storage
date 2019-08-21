@@ -1,6 +1,6 @@
 {
   "name": "@vowlink/sqlite-storage",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "sqlite storage for VowLink protocol",
   "main": "lib/storage.js",
   "scripts": {
