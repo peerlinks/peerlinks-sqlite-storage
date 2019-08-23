@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto';
 import Storage from '../';
 
 describe('Storage', function() {
-  this.timeout(20000);
+  this.timeout(60000);
 
   let channelId = null;
   let storage = null;
