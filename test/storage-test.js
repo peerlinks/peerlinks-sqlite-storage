@@ -263,4 +263,30 @@ describe('Storage', function() {
       assert.strictEqual(messages[i].toString(), '0: ' + hashes[i]);
     }
   });
+
+  it('should remove messages specific to the channel', async () => {
+    const a = {
+      channelId,
+      hash: randomBytes(32),
+      height: 0,
+      parents: [],
+      data: Buffer.from('fake'),
+    };
+
+    await storage.addMessage(a);
+    assert.ok(await storage.hasMessage(channelId, a.hash));
+
+    const b = {
+      channelId: randomBytes(32),
+      hash: randomBytes(32),
+      height: 0,
+      parents: [],
+      data: Buffer.from('fake'),
+    };
+    await storage.addMessage(b);
+    assert.ok(await storage.hasMessage(b.channelId, b.hash));
+
+    await storage.removeChannelMessages(b.channelId);
+    assert.ok(!(await storage.hasMessage(b.channelId, b.hash)));
+  });
 });
