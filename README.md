@@ -1,7 +1,7 @@
 # vowlink-sqlite-storage
 [![Build Status](https://travis-ci.org/vowlink/vowlink-sqlite-storage.svg?branch=master)](http://travis-ci.org/vowlink/vowlink-sqlite-storage)
 
-sqlite storage for VowLink protocol.
+SQLite storage for [VowLink] protocol.
 
 ## LICENSE
 
@@ -28,4 +28,4 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-[Protocol]: protocol.md
+[VowLink]: https://github.com/vowlink/vowlink
