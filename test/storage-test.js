@@ -187,8 +187,12 @@ describe('Storage', function() {
       }
     }
 
+    assert.strictEqual(await storage.getEntityCount(), 0);
+
     assert.ok(!await storage.retrieveEntity('fake', 'id'));
     await storage.storeEntity('fake', 'id', Buffer.from('hello'));
+
+    assert.strictEqual(await storage.getEntityCount(), 1);
 
     assert.deepStrictEqual(await storage.getEntityKeys('fake'), [ 'id' ]);
 
