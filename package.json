@@ -2,6 +2,7 @@
   "name": "@peerlinks/sqlite-storage",
   "version": "3.0.0",
   "description": "sqlite storage for PeerLinks protocol",
+  "type": "module",
   "main": "lib/storage.js",
   "scripts": {
     "lint": "eslint lib/**/*.js test/**/*.js",
