@@ -251,7 +251,7 @@ describe('Storage', function() {
 
   it('should load tons of messages with getMessages', async () => {
     const hashes = [];
-    for (let i = 0; i < 3000; i++ ){
+    for (let i = 0; i < 3000; i++) {
       let padded = i.toString();
       while (padded.length < 4) {
         padded = '0' + padded;
