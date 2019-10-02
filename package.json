@@ -6,6 +6,7 @@
   "main": "lib/storage.js",
   "scripts": {
     "lint": "eslint lib/**/*.js test/**/*.js",
+    "lint:fix": "npm run lint -- --fix",
     "mocha": "mocha -r esm --reporter=spec test/*-test.js",
     "test": "npm run mocha && npm run lint"
   },
@@ -48,6 +49,22 @@
       "sourceType": "module"
     },
     "rules": {
+      "indent": [
+        "error",
+        2
+      ],
+      "linebreak-style": [
+        "error",
+        "unix"
+      ],
+      "quotes": [
+        "error",
+        "single"
+      ],
+      "semi": [
+        "error",
+        "always"
+      ]
     }
   }
 }
