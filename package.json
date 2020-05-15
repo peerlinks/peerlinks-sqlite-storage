@@ -1,6 +1,6 @@
 {
   "name": "@peerlinks/sqlite-storage",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "sqlite storage for PeerLinks protocol",
   "main": "lib/storage.js",
   "scripts": {
